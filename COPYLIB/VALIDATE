@@ -1,0 +1,279 @@
+      **************************************************************************
+      * VALIDATION ROUTINES FOR DATA TYPE AND FORMAT VALIDATION
+      * PROVIDES COMMON VALIDATION PARAGRAPHS FOR REUSE ACROSS PROGRAMS
+      **************************************************************************
+       01  VALIDATION-SWITCHES.
+           05  VALIDATION-ERROR-SW          PIC X VALUE 'N'.
+           05  DATE-VALID-SW                PIC X VALUE 'N'.
+           05  EMAIL-VALID-SW               PIC X VALUE 'N'.
+           05  AUTHOR-VALID-SW              PIC X VALUE 'N'.
+           05  LOCATION-VALID-SW            PIC X VALUE 'N'.
+
+       01  VALIDATION-WORK-FIELDS.
+           05  WS-YEAR                      PIC 9(4).
+           05  WS-MONTH                     PIC 9(2).
+           05  WS-DAY                       PIC 9(2).
+           05  WS-EMAIL-LENGTH              PIC 9(2).
+           05  WS-AT-POSITION               PIC 9(2).
+           05  WS-CHAR-COUNT                PIC 9(2).
+           05  WS-CURRENT-CHAR              PIC X.
+           05  WS-FIELD-LENGTH              PIC 9(2).
+           05  WS-LEAP-YEAR-SW              PIC X VALUE 'N'.
+
+       01  VALIDATION-CONSTANTS.
+           05  VALID-AUTHOR-CHARS           PIC X(70) VALUE
+               'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,-'''.
+           05  VALID-LOCATION-CHARS         PIC X(70) VALUE
+               'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,-'''.
+
+      **************************************************************************
+      * VALIDATE-INPUT-FIELDS - MAIN VALIDATION ROUTINE
+      **************************************************************************
+       VALIDATE-INPUT-FIELDS.
+           MOVE 'N' TO VALIDATION-ERROR-SW.
+           
+           IF YEARI NOT = SPACES OR MONTHI NOT = SPACES OR DAYI NOT = SPACES
+               PERFORM VALIDATE-DATE-COMPONENTS
+               IF DATE-VALID-SW = 'N'
+                   MOVE 'Y' TO VALIDATION-ERROR-SW
+                   MOVE 0000000100 TO X-EIB-RESP
+                   GO TO VALIDATE-INPUT-FIELDS-EXIT
+               END-IF
+           END-IF.
+           
+           IF EMAILI NOT = SPACES
+               PERFORM VALIDATE-EMAIL-FORMAT
+               IF EMAIL-VALID-SW = 'N'
+                   MOVE 'Y' TO VALIDATION-ERROR-SW
+                   MOVE 0000000101 TO X-EIB-RESP
+                   GO TO VALIDATE-INPUT-FIELDS-EXIT
+               END-IF
+           END-IF.
+           
+           IF AUTHORI NOT = SPACES
+               PERFORM VALIDATE-AUTHOR-FORMAT
+               IF AUTHOR-VALID-SW = 'N'
+                   MOVE 'Y' TO VALIDATION-ERROR-SW
+                   MOVE 0000000102 TO X-EIB-RESP
+                   GO TO VALIDATE-INPUT-FIELDS-EXIT
+               END-IF
+           END-IF.
+           
+           IF LOCATIONI NOT = SPACES
+               PERFORM VALIDATE-LOCATION-FORMAT
+               IF LOCATION-VALID-SW = 'N'
+                   MOVE 'Y' TO VALIDATION-ERROR-SW
+                   MOVE 0000000103 TO X-EIB-RESP
+                   GO TO VALIDATE-INPUT-FIELDS-EXIT
+               END-IF
+           END-IF.
+           
+       VALIDATE-INPUT-FIELDS-EXIT.
+           EXIT.
+
+      **************************************************************************
+      * VALIDATE-DATE-COMPONENTS - VALIDATE YEAR, MONTH, DAY
+      **************************************************************************
+       VALIDATE-DATE-COMPONENTS.
+           MOVE 'Y' TO DATE-VALID-SW.
+           
+           IF YEARI IS NUMERIC
+               MOVE YEARI TO WS-YEAR
+               IF WS-YEAR < 1900 OR WS-YEAR > 2099
+                   MOVE 'N' TO DATE-VALID-SW
+                   MOVE -1 TO YEARL
+                   GO TO VALIDATE-DATE-EXIT
+               END-IF
+           ELSE
+               IF YEARI NOT = SPACES
+                   MOVE 'N' TO DATE-VALID-SW
+                   MOVE -1 TO YEARL
+                   GO TO VALIDATE-DATE-EXIT
+               END-IF
+           END-IF.
+           
+           IF MONTHI IS NUMERIC
+               MOVE MONTHI TO WS-MONTH
+               IF WS-MONTH < 1 OR WS-MONTH > 12
+                   MOVE 'N' TO DATE-VALID-SW
+                   MOVE -1 TO MONTHL
+                   GO TO VALIDATE-DATE-EXIT
+               END-IF
+           ELSE
+               IF MONTHI NOT = SPACES
+                   MOVE 'N' TO DATE-VALID-SW
+                   MOVE -1 TO MONTHL
+                   GO TO VALIDATE-DATE-EXIT
+               END-IF
+           END-IF.
+           
+           IF DAYI IS NUMERIC
+               MOVE DAYI TO WS-DAY
+               PERFORM CHECK-DAY-VALIDITY
+               IF WS-DAY < 1 OR DATE-VALID-SW = 'N'
+                   MOVE 'N' TO DATE-VALID-SW
+                   MOVE -1 TO DAYL
+                   GO TO VALIDATE-DATE-EXIT
+               END-IF
+           ELSE
+               IF DAYI NOT = SPACES
+                   MOVE 'N' TO DATE-VALID-SW
+                   MOVE -1 TO DAYL
+                   GO TO VALIDATE-DATE-EXIT
+               END-IF
+           END-IF.
+           
+       VALIDATE-DATE-EXIT.
+           EXIT.
+
+      **************************************************************************
+      * CHECK-DAY-VALIDITY - CHECK DAY AGAINST MONTH AND LEAP YEAR
+      **************************************************************************
+       CHECK-DAY-VALIDITY.
+           EVALUATE WS-MONTH
+               WHEN 1 WHEN 3 WHEN 5 WHEN 7 WHEN 8 WHEN 10 WHEN 12
+                   IF WS-DAY > 31
+                       MOVE 'N' TO DATE-VALID-SW
+                   END-IF
+               WHEN 4 WHEN 6 WHEN 9 WHEN 11
+                   IF WS-DAY > 30
+                       MOVE 'N' TO DATE-VALID-SW
+                   END-IF
+               WHEN 2
+                   PERFORM CHECK-LEAP-YEAR
+                   IF WS-LEAP-YEAR-SW = 'Y'
+                       IF WS-DAY > 29
+                           MOVE 'N' TO DATE-VALID-SW
+                       END-IF
+                   ELSE
+                       IF WS-DAY > 28
+                           MOVE 'N' TO DATE-VALID-SW
+                       END-IF
+                   END-IF
+           END-EVALUATE.
+
+      **************************************************************************
+      * CHECK-LEAP-YEAR - DETERMINE IF YEAR IS A LEAP YEAR
+      **************************************************************************
+       CHECK-LEAP-YEAR.
+           MOVE 'N' TO WS-LEAP-YEAR-SW.
+           IF FUNCTION MOD(WS-YEAR, 4) = 0
+               IF FUNCTION MOD(WS-YEAR, 100) = 0
+                   IF FUNCTION MOD(WS-YEAR, 400) = 0
+                       MOVE 'Y' TO WS-LEAP-YEAR-SW
+                   END-IF
+               ELSE
+                   MOVE 'Y' TO WS-LEAP-YEAR-SW
+               END-IF
+           END-IF.
+
+      **************************************************************************
+      * VALIDATE-EMAIL-FORMAT - VALIDATE EMAIL ADDRESS FORMAT
+      **************************************************************************
+       VALIDATE-EMAIL-FORMAT.
+           MOVE 'Y' TO EMAIL-VALID-SW.
+           MOVE 0 TO WS-AT-POSITION.
+           MOVE 0 TO WS-EMAIL-LENGTH.
+           
+           INSPECT EMAILI TALLYING WS-EMAIL-LENGTH FOR CHARACTERS.
+           
+           IF WS-EMAIL-LENGTH < 5 OR WS-EMAIL-LENGTH > 50
+               MOVE 'N' TO EMAIL-VALID-SW
+               MOVE -1 TO EMAILL
+               GO TO VALIDATE-EMAIL-EXIT
+           END-IF.
+           
+           INSPECT EMAILI TALLYING WS-CHAR-COUNT FOR ALL '@'.
+           IF WS-CHAR-COUNT NOT = 1
+               MOVE 'N' TO EMAIL-VALID-SW
+               MOVE -1 TO EMAILL
+               GO TO VALIDATE-EMAIL-EXIT
+           END-IF.
+           
+           PERFORM VARYING WS-CHAR-COUNT FROM 1 BY 1
+               UNTIL WS-CHAR-COUNT > WS-EMAIL-LENGTH
+               OR WS-AT-POSITION > 0
+               IF EMAILI(WS-CHAR-COUNT:1) = '@'
+                   MOVE WS-CHAR-COUNT TO WS-AT-POSITION
+               END-IF
+           END-PERFORM.
+           
+           IF WS-AT-POSITION <= 1 OR WS-AT-POSITION >= WS-EMAIL-LENGTH
+               MOVE 'N' TO EMAIL-VALID-SW
+               MOVE -1 TO EMAILL
+           END-IF.
+           
+       VALIDATE-EMAIL-EXIT.
+           EXIT.
+
+      **************************************************************************
+      * VALIDATE-AUTHOR-FORMAT - VALIDATE AUTHOR FIELD CHARACTERS
+      **************************************************************************
+       VALIDATE-AUTHOR-FORMAT.
+           MOVE 'Y' TO AUTHOR-VALID-SW.
+           MOVE 0 TO WS-FIELD-LENGTH.
+           
+           INSPECT AUTHORI TALLYING WS-FIELD-LENGTH FOR CHARACTERS.
+           
+           IF WS-FIELD-LENGTH = 0
+               MOVE 'N' TO AUTHOR-VALID-SW
+               MOVE -1 TO AUTHORL
+               GO TO VALIDATE-AUTHOR-EXIT
+           END-IF.
+           
+           PERFORM VARYING WS-CHAR-COUNT FROM 1 BY 1
+               UNTIL WS-CHAR-COUNT > WS-FIELD-LENGTH
+               OR AUTHOR-VALID-SW = 'N'
+               MOVE AUTHORI(WS-CHAR-COUNT:1) TO WS-CURRENT-CHAR
+               INSPECT WS-CURRENT-CHAR CONVERTING 
+                   'abcdefghijklmnopqrstuvwxyz' TO
+                   'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+               IF WS-CURRENT-CHAR NOT = SPACE
+                   INSPECT VALID-AUTHOR-CHARS TALLYING WS-AT-POSITION
+                       FOR ALL WS-CURRENT-CHAR
+                   IF WS-AT-POSITION = 0
+                       MOVE 'N' TO AUTHOR-VALID-SW
+                       MOVE -1 TO AUTHORL
+                   END-IF
+                   MOVE 0 TO WS-AT-POSITION
+               END-IF
+           END-PERFORM.
+           
+       VALIDATE-AUTHOR-EXIT.
+           EXIT.
+
+      **************************************************************************
+      * VALIDATE-LOCATION-FORMAT - VALIDATE LOCATION FIELD CHARACTERS
+      **************************************************************************
+       VALIDATE-LOCATION-FORMAT.
+           MOVE 'Y' TO LOCATION-VALID-SW.
+           MOVE 0 TO WS-FIELD-LENGTH.
+           
+           INSPECT LOCATIONI TALLYING WS-FIELD-LENGTH FOR CHARACTERS.
+           
+           IF WS-FIELD-LENGTH = 0
+               MOVE 'N' TO LOCATION-VALID-SW
+               MOVE -1 TO LOCATIONL
+               GO TO VALIDATE-LOCATION-EXIT
+           END-IF.
+           
+           PERFORM VARYING WS-CHAR-COUNT FROM 1 BY 1
+               UNTIL WS-CHAR-COUNT > WS-FIELD-LENGTH
+               OR LOCATION-VALID-SW = 'N'
+               MOVE LOCATIONI(WS-CHAR-COUNT:1) TO WS-CURRENT-CHAR
+               INSPECT WS-CURRENT-CHAR CONVERTING 
+                   'abcdefghijklmnopqrstuvwxyz' TO
+                   'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+               IF WS-CURRENT-CHAR NOT = SPACE
+                   INSPECT VALID-LOCATION-CHARS TALLYING WS-AT-POSITION
+                       FOR ALL WS-CURRENT-CHAR
+                   IF WS-AT-POSITION = 0
+                       MOVE 'N' TO LOCATION-VALID-SW
+                       MOVE -1 TO LOCATIONL
+                   END-IF
+                   MOVE 0 TO WS-AT-POSITION
+               END-IF
+           END-PERFORM.
+           
+       VALIDATE-LOCATION-EXIT.
+           EXIT.
