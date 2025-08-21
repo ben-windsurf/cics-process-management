@@ -35,6 +35,7 @@
                10  FILLER               PIC X(437).
        COPY HPMSB03.
        COPY PROPINV.
+       COPY VALIDATE.
        COPY DFHAID.
        COPY DFHBMSCA.
       **************************************************************************
@@ -314,6 +315,14 @@
                MOVE "FILE NOT OPEN" TO X-EIB-USER-MSG
            ELSE IF X-EIB-RESP = 0000000022 THEN
                MOVE "LRECL ERROR" TO X-EIB-USER-MSG
+           ELSE IF X-EIB-RESP = 0000000100 THEN
+               MOVE "INVALID DATE FORMAT" TO X-EIB-USER-MSG
+           ELSE IF X-EIB-RESP = 0000000101 THEN
+               MOVE "INVALID EMAIL FORMAT" TO X-EIB-USER-MSG
+           ELSE IF X-EIB-RESP = 0000000102 THEN
+               MOVE "INVALID AUTHOR FORMAT" TO X-EIB-USER-MSG
+           ELSE IF X-EIB-RESP = 0000000103 THEN
+               MOVE "INVALID LOCATION FORMAT" TO X-EIB-USER-MSG
            ELSE
                MOVE "GENERAL ERROR" TO X-EIB-USER-MSG
            END-IF.

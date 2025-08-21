@@ -33,6 +33,7 @@
                10  FILLER               PIC X(1208).
        COPY HPMSB06.
        COPY INCIDENT.
+       COPY VALIDATE.
        COPY DFHAID.
        COPY DFHBMSCA.
       **************************************************************************
@@ -169,6 +170,14 @@
                MOVE "FILE NOT OPEN" TO X-EIB-USER-MSG
            ELSE IF X-EIB-RESP = 0000000022 THEN
                MOVE "LRECL ERROR" TO X-EIB-USER-MSG
+           ELSE IF X-EIB-RESP = 0000000100 THEN
+               MOVE "INVALID DATE FORMAT" TO X-EIB-USER-MSG
+           ELSE IF X-EIB-RESP = 0000000101 THEN
+               MOVE "INVALID EMAIL FORMAT" TO X-EIB-USER-MSG
+           ELSE IF X-EIB-RESP = 0000000102 THEN
+               MOVE "INVALID AUTHOR FORMAT" TO X-EIB-USER-MSG
+           ELSE IF X-EIB-RESP = 0000000103 THEN
+               MOVE "INVALID LOCATION FORMAT" TO X-EIB-USER-MSG
            ELSE
                MOVE "GENERAL ERROR" TO X-EIB-USER-MSG
            END-IF.
@@ -212,15 +221,19 @@
            PERFORM ADD-INFORMATION-DATA.
       **************************************************************************
        ADD-INFORMATION-DATA.
-           PERFORM DATA-SCREEN-TO-FILE.
-           PERFORM INCI-WRITE.
-
-           IF DATA-RESP-CODE = 0
-               PERFORM DATA-INITIALIZE-SCREEN-RECORD
-               MOVE "NEW INCIDENT ADDED" TO MSGO
-               PERFORM SCREEN-IO-SEND-UPDATE
-           ELSE
+           PERFORM VALIDATE-INPUT-FIELDS.
+           IF VALIDATION-ERROR-SW = 'Y'
                PERFORM GENERAL-ERROR-ROUTINE
+           ELSE
+               PERFORM DATA-SCREEN-TO-FILE
+               PERFORM INCI-WRITE
+               IF DATA-RESP-CODE = 0
+                   PERFORM DATA-INITIALIZE-SCREEN-RECORD
+                   MOVE "NEW INCIDENT ADDED" TO MSGO
+                   PERFORM SCREEN-IO-SEND-UPDATE
+               ELSE
+                   PERFORM GENERAL-ERROR-ROUTINE
+               END-IF
            END-IF.
       **************************************************************************
        END-OF-PROGRAM.
