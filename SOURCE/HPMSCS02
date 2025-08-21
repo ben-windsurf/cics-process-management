@@ -268,14 +268,59 @@
        DATA-SCREEN-TO-FILE.
            IF AUTHORL > 0 THEN MOVE AUTHORI TO INCI-AUTHOR
            END-IF.
-           IF EMAILL > 0 THEN MOVE EMAILI TO INCI-EMAIL
+
+           IF EMAILL > 0 THEN
+               IF EMAILI CONTAINS '@' AND EMAILI CONTAINS '.'
+                   MOVE EMAILI TO INCI-EMAIL
+               ELSE
+                   MOVE 'INVALID EMAIL FORMAT - MUST CONTAIN @ AND DOMAIN' TO MSGO
+                   MOVE -1 TO EMAILL
+                   PERFORM RECOVERY-ROUTINE
+               END-IF
            END-IF.
-           IF YEARL > 0 THEN MOVE YEARI TO INCI-YEAR
+
+           IF YEARL > 0 THEN
+               IF YEARI IS NUMERIC
+                   IF YEARI >= 1900 AND YEARI <= 2100
+                       MOVE YEARI TO INCI-YEAR
+                   ELSE
+                       MOVE 'INVALID YEAR RANGE (1900-2100)' TO MSGO
+                       MOVE -1 TO YEARL
+                       PERFORM RECOVERY-ROUTINE
+                   END-IF
+               ELSE
+                   MOVE 'YEAR MUST BE NUMERIC' TO MSGO
+                   MOVE -1 TO YEARL
+                   PERFORM RECOVERY-ROUTINE
+               END-IF
            END-IF.
-           IF MONTHL > 0 THEN MOVE MONTHI TO INCI-MONTH
+
+           IF MONTHL > 0 THEN
+               IF MONTHI IS NUMERIC
+                   IF MONTHI >= 1 AND MONTHI <= 12
+                       MOVE MONTHI TO INCI-MONTH
+                   ELSE
+                       MOVE 'INVALID MONTH RANGE (1-12)' TO MSGO
+                       MOVE -1 TO MONTHL
+                       PERFORM RECOVERY-ROUTINE
+                   END-IF
+               ELSE
+                   MOVE 'MONTH MUST BE NUMERIC' TO MSGO
+                   MOVE -1 TO MONTHL
+                   PERFORM RECOVERY-ROUTINE
+               END-IF
            END-IF.
-           IF DAYL > 0 THEN MOVE DAYI TO INCI-DAY
+
+           IF DAYL > 0 THEN
+               IF DAYI IS NUMERIC
+                   PERFORM VALIDATE-DAY
+               ELSE
+                   MOVE 'DAY MUST BE NUMERIC' TO MSGO
+                   MOVE -1 TO DAYL
+                   PERFORM RECOVERY-ROUTINE
+               END-IF
            END-IF.
+
            IF LOCATIONL > 0 THEN MOVE LOCATIONI TO INCI-LOCATION
            END-IF.
            IF NOTE1L > 0 THEN MOVE NOTE1I TO INCI-NOTE-1
@@ -306,6 +351,57 @@
            END-IF.
            IF NOTE14L > 0 THEN MOVE NOTE14I TO INCI-NOTE-14
            END-IF.
+      **************************************************************************
+      * VALIDATE-DAY - Validates day field based on month and leap year logic
+      * Checks day ranges: 31 days (Jan,Mar,May,Jul,Aug,Oct,Dec)
+      *                   30 days (Apr,Jun,Sep,Nov)
+      *                   28/29 days (Feb - depends on leap year)
+      * Uses leap year calculation: divisible by 4, except century years
+      * unless also divisible by 400
+      **************************************************************************
+       VALIDATE-DAY.
+           EVALUATE INCI-MONTH
+               WHEN 1 OR 3 OR 5 OR 7 OR 8 OR 10 OR 12
+                   IF DAYI >= 1 AND DAYI <= 31
+                       MOVE DAYI TO INCI-DAY
+                   ELSE
+                       MOVE 'INVALID DAY FOR MONTH (1-31)' TO MSGO
+                       MOVE -1 TO DAYL
+                       PERFORM RECOVERY-ROUTINE
+                   END-IF
+               WHEN 4 OR 6 OR 9 OR 11
+                   IF DAYI >= 1 AND DAYI <= 30
+                       MOVE DAYI TO INCI-DAY
+                   ELSE
+                       MOVE 'INVALID DAY FOR MONTH (1-30)' TO MSGO
+                       MOVE -1 TO DAYL
+                       PERFORM RECOVERY-ROUTINE
+                   END-IF
+               WHEN 2
+                   IF FUNCTION MOD(INCI-YEAR, 4) = 0 AND 
+                      (FUNCTION MOD(INCI-YEAR, 100) NOT = 0 OR 
+                       FUNCTION MOD(INCI-YEAR, 400) = 0)
+                       IF DAYI >= 1 AND DAYI <= 29
+                           MOVE DAYI TO INCI-DAY
+                       ELSE
+                           MOVE 'INVALID DAY FOR LEAP YEAR FEB (1-29)' TO MSGO
+                           MOVE -1 TO DAYL
+                           PERFORM RECOVERY-ROUTINE
+                       END-IF
+                   ELSE
+                       IF DAYI >= 1 AND DAYI <= 28
+                           MOVE DAYI TO INCI-DAY
+                       ELSE
+                           MOVE 'INVALID DAY FOR FEBRUARY (1-28)' TO MSGO
+                           MOVE -1 TO DAYL
+                           PERFORM RECOVERY-ROUTINE
+                       END-IF
+                   END-IF
+               WHEN OTHER
+                   MOVE 'INVALID MONTH FOR DAY VALIDATION' TO MSGO
+                   MOVE -1 TO MONTHL
+                   PERFORM RECOVERY-ROUTINE
+           END-EVALUATE.
       **************************************************************************
        END-OF-PROGRAM.
            EXEC CICS XCTL
