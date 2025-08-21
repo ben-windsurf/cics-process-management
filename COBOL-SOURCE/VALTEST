@@ -1,0 +1,294 @@
+      **************************************************************************
+      * CATEGORY.: HPMS COBOL PROGRAMS
+      * GROUP....: COBOL
+      * AUTHOR...: DEVIN AI
+      * DATE.....: 2025-08-21
+      * PURPOSE..: VALIDATION UNIT TESTS FOR DATA-TYPE-FORMAT-VALIDATION
+      **************************************************************************
+      * MODIFICATIONS
+      * 2025-08-21 - DEVIN AI - INITIAL VERSION
+      **************************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.  VALTEST.
+      **************************************************************************
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT OUTFILE ASSIGN TO TESTOUT.
+       DATA DIVISION.
+       FILE SECTION.
+       FD OUTFILE
+           RECORDING MODE V.
+       01  OUTFILE-RECORD              PIC X(200).
+       WORKING-STORAGE SECTION.
+       01  WS-CURRENT-DATE.
+           05  WS-YEAR                 PIC 9(4).
+           05  WS-MONTH                PIC 9(2).
+           05  WS-DAY                  PIC 9(2).
+           05  WS-HOURS                PIC 9(2).
+           05  WS-MINUTES              PIC 9(2).
+           05  WS-SECONDS              PIC 9(2).
+           05  WS-HUND-SECOND          PIC 9(2).
+           05  WS-GMT                  PIC X(5).
+       01  TEST-FIELDS.
+           05  TEST-YEAR               PIC X(4).
+           05  TEST-MONTH              PIC X(2).
+           05  TEST-DAY                PIC X(2).
+           05  TEST-EMAIL              PIC X(30).
+       01  TEST-RESULTS.
+           05  TESTS-RUN               PIC 9(3) VALUE 0.
+           05  TESTS-PASSED            PIC 9(3) VALUE 0.
+           05  TESTS-FAILED            PIC 9(3) VALUE 0.
+       01  WS-AT-COUNT                 PIC 9(2) VALUE 0.
+       01  VALIDATION-RESULT           PIC X(4).
+       01  TEST-DESCRIPTION            PIC X(50).
+       01  DATE-LINE.
+           05  FILLER                  PIC X(12)
+               VALUE 'TEST DATE:'.
+           05  FILLER                  PIC X(1)
+               VALUE SPACES.
+           05  DT-YEAR                 PIC 9(4).
+           05  FILLER                  PIC X
+               VALUE '/'.
+           05  DT-MONTH                PIC 9(2).
+           05  FILLER                  PIC X
+               VALUE '/'.
+           05  DT-DAY                  PIC 9(2).
+       01  HEADER-1.
+           05  FILLER                  PIC X(100)
+               VALUE  'HAYNIE RESEARCH & DEVELOPMENT'.
+       01  HEADER-2.
+           05  FILLER                  PIC X(100)
+               VALUE  'DATA VALIDATION UNIT TEST RESULTS'.
+       01  HEADER-3.
+           05  FILLER                  PIC X(52)
+               VALUE  'TEST DESCRIPTION'.
+           05  FILLER                  PIC X(8)
+               VALUE  'RESULT'.
+       01  HEADER-4.
+           05  FILLER                  PIC X(50)
+               VALUE '------------------------------------------------'.
+           05  FILLER                  PIC X(2)
+               VALUE SPACES.
+           05  FILLER                  PIC X(6)
+               VALUE '------'.
+       01  TEST-OUTPUT-LINE.
+           05  TEST-DESC-OUT           PIC X(50).
+           05  FILLER                  PIC X(2)
+               VALUE SPACES.
+           05  TEST-RESULT-OUT         PIC X(6).
+       01  SUMMARY-LINE.
+           05  FILLER                  PIC X(15)
+               VALUE 'TESTS RUN: '.
+           05  TESTS-RUN-OUT           PIC ZZ9.
+           05  FILLER                  PIC X(15)
+               VALUE '  PASSED: '.
+           05  TESTS-PASSED-OUT        PIC ZZ9.
+           05  FILLER                  PIC X(15)
+               VALUE '  FAILED: '.
+           05  TESTS-FAILED-OUT        PIC ZZ9.
+      **************************************************************************
+       PROCEDURE DIVISION.
+       MAIN-PROGRAM.
+           MOVE FUNCTION CURRENT-DATE TO WS-CURRENT-DATE.
+           MOVE WS-YEAR TO DT-YEAR.
+           MOVE WS-MONTH TO DT-MONTH.
+           MOVE WS-DAY TO DT-DAY.
+           OPEN OUTPUT OUTFILE.
+           PERFORM PRINT-HEADER.
+           PERFORM RUN-YEAR-TESTS.
+           PERFORM RUN-MONTH-TESTS.
+           PERFORM RUN-DAY-TESTS.
+           PERFORM RUN-EMAIL-TESTS.
+           PERFORM DISPLAY-RESULTS.
+           CLOSE OUTFILE.
+           STOP RUN.
+      **************************************************************************
+       PRINT-HEADER.
+           MOVE HEADER-1 TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.
+           MOVE HEADER-2 TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.
+           MOVE DATE-LINE TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.
+           MOVE SPACES TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.
+           MOVE HEADER-3 TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.
+           MOVE HEADER-4 TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.
+           MOVE SPACES TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.
+      **************************************************************************
+       RUN-YEAR-TESTS.
+           MOVE '1900' TO TEST-YEAR.
+           MOVE 'YEAR VALIDATION - VALID 1900' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-YEAR.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '2000' TO TEST-YEAR.
+           MOVE 'YEAR VALIDATION - VALID 2000' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-YEAR.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '2099' TO TEST-YEAR.
+           MOVE 'YEAR VALIDATION - VALID 2099' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-YEAR.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '1899' TO TEST-YEAR.
+           MOVE 'YEAR VALIDATION - INVALID 1899' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-YEAR.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '2100' TO TEST-YEAR.
+           MOVE 'YEAR VALIDATION - INVALID 2100' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-YEAR.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE 'ABCD' TO TEST-YEAR.
+           MOVE 'YEAR VALIDATION - INVALID NON-NUMERIC' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-YEAR.
+           PERFORM RECORD-TEST-RESULT.
+      **************************************************************************
+       RUN-MONTH-TESTS.
+           MOVE '01' TO TEST-MONTH.
+           MOVE 'MONTH VALIDATION - VALID 01' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-MONTH.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '06' TO TEST-MONTH.
+           MOVE 'MONTH VALIDATION - VALID 06' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-MONTH.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '12' TO TEST-MONTH.
+           MOVE 'MONTH VALIDATION - VALID 12' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-MONTH.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '00' TO TEST-MONTH.
+           MOVE 'MONTH VALIDATION - INVALID 00' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-MONTH.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '13' TO TEST-MONTH.
+           MOVE 'MONTH VALIDATION - INVALID 13' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-MONTH.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE 'AB' TO TEST-MONTH.
+           MOVE 'MONTH VALIDATION - INVALID NON-NUMERIC' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-MONTH.
+           PERFORM RECORD-TEST-RESULT.
+      **************************************************************************
+       RUN-DAY-TESTS.
+           MOVE '01' TO TEST-DAY.
+           MOVE 'DAY VALIDATION - VALID 01' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-DAY.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '15' TO TEST-DAY.
+           MOVE 'DAY VALIDATION - VALID 15' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-DAY.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '31' TO TEST-DAY.
+           MOVE 'DAY VALIDATION - VALID 31' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-DAY.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '00' TO TEST-DAY.
+           MOVE 'DAY VALIDATION - INVALID 00' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-DAY.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE '32' TO TEST-DAY.
+           MOVE 'DAY VALIDATION - INVALID 32' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-DAY.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE 'AB' TO TEST-DAY.
+           MOVE 'DAY VALIDATION - INVALID NON-NUMERIC' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-DAY.
+           PERFORM RECORD-TEST-RESULT.
+      **************************************************************************
+       RUN-EMAIL-TESTS.
+           MOVE 'test@example.com' TO TEST-EMAIL.
+           MOVE 'EMAIL VALIDATION - VALID WITH @' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-EMAIL.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE 'user@domain.org' TO TEST-EMAIL.
+           MOVE 'EMAIL VALIDATION - VALID WITH @' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-EMAIL.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE 'testexample.com' TO TEST-EMAIL.
+           MOVE 'EMAIL VALIDATION - INVALID NO @' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-EMAIL.
+           PERFORM RECORD-TEST-RESULT.
+           
+           MOVE 'plaintext' TO TEST-EMAIL.
+           MOVE 'EMAIL VALIDATION - INVALID NO @' TO TEST-DESCRIPTION.
+           PERFORM VALIDATE-EMAIL.
+           PERFORM RECORD-TEST-RESULT.
+      **************************************************************************
+       VALIDATE-YEAR.
+           MOVE 'PASS' TO VALIDATION-RESULT.
+           IF TEST-YEAR IS NOT NUMERIC THEN
+               MOVE 'FAIL' TO VALIDATION-RESULT
+           ELSE
+               IF TEST-YEAR < '1900' OR TEST-YEAR > '2099' THEN
+                   MOVE 'FAIL' TO VALIDATION-RESULT
+               END-IF
+           END-IF.
+      **************************************************************************
+       VALIDATE-MONTH.
+           MOVE 'PASS' TO VALIDATION-RESULT.
+           IF TEST-MONTH IS NOT NUMERIC THEN
+               MOVE 'FAIL' TO VALIDATION-RESULT
+           ELSE
+               IF TEST-MONTH < '01' OR TEST-MONTH > '12' THEN
+                   MOVE 'FAIL' TO VALIDATION-RESULT
+               END-IF
+           END-IF.
+      **************************************************************************
+       VALIDATE-DAY.
+           MOVE 'PASS' TO VALIDATION-RESULT.
+           IF TEST-DAY IS NOT NUMERIC THEN
+               MOVE 'FAIL' TO VALIDATION-RESULT
+           ELSE
+               IF TEST-DAY < '01' OR TEST-DAY > '31' THEN
+                   MOVE 'FAIL' TO VALIDATION-RESULT
+               END-IF
+           END-IF.
+      **************************************************************************
+       VALIDATE-EMAIL.
+           MOVE 'PASS' TO VALIDATION-RESULT.
+           MOVE 0 TO WS-AT-COUNT.
+           INSPECT TEST-EMAIL TALLYING WS-AT-COUNT FOR ALL '@'.
+           IF WS-AT-COUNT = 0 THEN
+               MOVE 'FAIL' TO VALIDATION-RESULT
+           END-IF.
+      **************************************************************************
+       RECORD-TEST-RESULT.
+           ADD 1 TO TESTS-RUN.
+           MOVE TEST-DESCRIPTION TO TEST-DESC-OUT.
+           MOVE VALIDATION-RESULT TO TEST-RESULT-OUT.
+           MOVE TEST-OUTPUT-LINE TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.
+           IF VALIDATION-RESULT = 'PASS' THEN
+               ADD 1 TO TESTS-PASSED
+           ELSE
+               ADD 1 TO TESTS-FAILED
+           END-IF.
+      **************************************************************************
+       DISPLAY-RESULTS.
+           MOVE SPACES TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.
+           MOVE TESTS-RUN TO TESTS-RUN-OUT.
+           MOVE TESTS-PASSED TO TESTS-PASSED-OUT.
+           MOVE TESTS-FAILED TO TESTS-FAILED-OUT.
+           MOVE SUMMARY-LINE TO OUTFILE-RECORD.
+           WRITE OUTFILE-RECORD.

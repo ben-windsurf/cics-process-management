@@ -28,6 +28,7 @@
            05  X-EIB-RESP2              PIC 9(10) VALUE 0.
            05  FILLER                   PIC X VALUE SPACE.
            05  X-EIB-USER-MSG           PIC X(38) VALUE SPACES.
+       01  WS-AT-COUNT                  PIC 9(2) VALUE 0.
        01  WS-COMMAREA.
            05  CA-INCI-RECORD.
                10  CA-RECORD-ID         PIC X(6).
@@ -307,6 +308,79 @@
            IF NOTE14L > 0 THEN MOVE NOTE14I TO INCI-NOTE-14
            END-IF.
       **************************************************************************
+      * TAG: DATA-TYPE-FORMAT-VALIDATION - VALIDATE INPUT FIELD FORMATS
+       VALIDATE-INPUT-FIELDS.
+      * VALIDATE YEAR FIELD (4 DIGITS)
+           IF YEARL > 0 THEN
+               IF YEARI IS NOT NUMERIC THEN
+                   MOVE LOW-VALUES TO INCIO
+                   MOVE -1 TO YEARL
+                   MOVE "YEAR MUST BE 4 DIGITS (YYYY)" TO MSGO
+                   PERFORM DATA-INITIALIZE-SCREEN-RECORD
+                   PERFORM SCREEN-IO-SEND-UPDATE
+                   EXEC CICS RETURN END-EXEC
+               END-IF
+               IF YEARI < '1900' OR YEARI > '2099' THEN
+                   MOVE LOW-VALUES TO INCIO
+                   MOVE -1 TO YEARL
+                   MOVE "YEAR MUST BE BETWEEN 1900 AND 2099" TO MSGO
+                   PERFORM DATA-INITIALIZE-SCREEN-RECORD
+                   PERFORM SCREEN-IO-SEND-UPDATE
+                   EXEC CICS RETURN END-EXEC
+               END-IF
+           END-IF.
+      * VALIDATE MONTH FIELD (1-12)
+           IF MONTHL > 0 THEN
+               IF MONTHI IS NOT NUMERIC THEN
+                   MOVE LOW-VALUES TO INCIO
+                   MOVE -1 TO MONTHL
+                   MOVE "MONTH MUST BE NUMERIC (1-12)" TO MSGO
+                   PERFORM DATA-INITIALIZE-SCREEN-RECORD
+                   PERFORM SCREEN-IO-SEND-UPDATE
+                   EXEC CICS RETURN END-EXEC
+               END-IF
+               IF MONTHI < '01' OR MONTHI > '12' THEN
+                   MOVE LOW-VALUES TO INCIO
+                   MOVE -1 TO MONTHL
+                   MOVE "MONTH MUST BE BETWEEN 01 AND 12" TO MSGO
+                   PERFORM DATA-INITIALIZE-SCREEN-RECORD
+                   PERFORM SCREEN-IO-SEND-UPDATE
+                   EXEC CICS RETURN END-EXEC
+               END-IF
+           END-IF.
+      * VALIDATE DAY FIELD (1-31)
+           IF DAYL > 0 THEN
+               IF DAYI IS NOT NUMERIC THEN
+                   MOVE LOW-VALUES TO INCIO
+                   MOVE -1 TO DAYL
+                   MOVE "DAY MUST BE NUMERIC (1-31)" TO MSGO
+                   PERFORM DATA-INITIALIZE-SCREEN-RECORD
+                   PERFORM SCREEN-IO-SEND-UPDATE
+                   EXEC CICS RETURN END-EXEC
+               END-IF
+               IF DAYI < '01' OR DAYI > '31' THEN
+                   MOVE LOW-VALUES TO INCIO
+                   MOVE -1 TO DAYL
+                   MOVE "DAY MUST BE BETWEEN 01 AND 31" TO MSGO
+                   PERFORM DATA-INITIALIZE-SCREEN-RECORD
+                   PERFORM SCREEN-IO-SEND-UPDATE
+                   EXEC CICS RETURN END-EXEC
+               END-IF
+           END-IF.
+      * VALIDATE EMAIL FIELD (MUST CONTAIN @)
+           IF EMAILL > 0 THEN
+               MOVE 0 TO WS-AT-COUNT
+               INSPECT EMAILI TALLYING WS-AT-COUNT FOR ALL '@'
+               IF WS-AT-COUNT = 0 THEN
+                   MOVE LOW-VALUES TO INCIO
+                   MOVE -1 TO EMAILL
+                   MOVE "EMAIL MUST CONTAIN @ SYMBOL" TO MSGO
+                   PERFORM DATA-INITIALIZE-SCREEN-RECORD
+                   PERFORM SCREEN-IO-SEND-UPDATE
+                   EXEC CICS RETURN END-EXEC
+               END-IF
+           END-IF.
+      **************************************************************************
        END-OF-PROGRAM.
            EXEC CICS XCTL
                 PROGRAM('HPMSCM02')
@@ -418,6 +492,7 @@
            IF DATA-RESP-CODE NOT = 0
                PERFORM GENERAL-ERROR-ROUTINE
            END-IF.
+           PERFORM VALIDATE-INPUT-FIELDS.
            PERFORM DATA-SCREEN-TO-FILE.
            PERFORM INCI-REWRITE.
            IF DATA-RESP-CODE = 0

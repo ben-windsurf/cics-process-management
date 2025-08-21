@@ -1,0 +1,47 @@
+//LHAYNIEC    JOB (HAYNIE),'LANCE HAYNIE',
+//            CLASS=T,NOTIFY=&SYSUID,MSGCLASS=T,REGION=4096K
+//**********************************************************************
+//* CATEGORY.: HPMS COBOL PROGRAMS
+//* GROUP....: COBOL JCL
+//* AUTHOR...: DEVIN AI
+//* DATE.....: 2025-08-21
+//* PURPOSE..: COMPILE VALIDATION UNIT TEST PROGRAM
+//**********************************************************************
+//* MODIFICATIONS
+//* 2025-08-21 - DEVIN AI - INITIAL VERSION
+//**********************************************************************
+//* NOTE: EDIT THE SET STATEMENTS TO MATCH YOUR ENVIRONMENT
+//COBSRC      SET COBSRC=VALTEST
+//SRCDSN      SET SRCDSN=HRD.HPMS.DEV.COBOL.SOURCE
+//CPYDSN      SET CPYDSN=HRD.HPMS.DEV.COBOL.COPYLIB
+//LOADDSN     SET LOADDSN=HRD.HPMS.DEV.COBOL.LOAD
+//**********************************************************************
+//*****************DO NOT EDIT BELOW THIS LINE**************************
+//**********************************************************************
+//COBOL       EXEC PGM=IGYCRCTL,COND=(4,LT),
+//            PARM=('XREF,MAP,SSRANGE,OFFSET,LIB')
+//STEPLIB     DD DSN=IGY410.SIGYCOMP,DISP=SHR
+//SYSPRINT    DD SYSOUT=*
+//SYSLIN      DD DSN=&OBJECT,DISP=(,PASS),
+//            UNIT=SYSDA,SPACE=(CYL,(5,15),RLSE),
+//            DCB=(RECFM=FB,LRECL=80,BLKSIZE=400)
+//SYSUT1      DD UNIT=SYSDA,SPACE=(CYL,(1,1))
+//SYSUT2      DD UNIT=SYSDA,SPACE=(CYL,(1,1))
+//SYSUT3      DD UNIT=SYSDA,SPACE=(CYL,(1,1))
+//SYSUT4      DD UNIT=SYSDA,SPACE=(CYL,(1,1))
+//SYSUT5      DD UNIT=SYSDA,SPACE=(CYL,(1,1))
+//SYSUT6      DD UNIT=SYSDA,SPACE=(CYL,(1,1))
+//SYSUT7      DD UNIT=SYSDA,SPACE=(CYL,(1,1))
+//SYSUT8      DD UNIT=SYSDA,SPACE=(CYL,(1,1))
+//MSGPRINT    DD SYSOUT=*
+//SYSOUT      DD SYSOUT=*
+//SYSUDUMP    DD SYSOUT=*
+//SYSPUNCH    DD SYSOUT=*
+//SYSIN       DD DSN=&SRCDSN(&COBSRC),DISP=SHR
+//SYSLIB      DD DSN=&CPYDSN,DISP=SHR
+//LKED        EXEC PGM=HEWL,COND=(8,LT,COBOL),REGION=1024K
+//SYSLIB      DD DSN=CEE.SCEELKED,DISP=SHR
+//SYSPRINT    DD SYSOUT=*
+//SYSLIN      DD DSN=&OBJECT,DISP=(OLD,PASS)
+//SYSLMOD     DD DSN=&LOADDSN(&COBSRC),DISP=SHR
+//SYSUT1      DD UNIT=SYSDA,SPACE=(CYL,(1,1))
