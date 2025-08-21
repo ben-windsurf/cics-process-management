@@ -272,8 +272,18 @@
                PERFORM GENERAL-ERROR-ROUTINE
            END-IF.
       **************************************************************************
+      * RECOVERY-ROUTINE - Error recovery for validation failures
+      * Sends updated screen with error message and cursor positioning
+      **************************************************************************
        RECOVERY-ROUTINE.
            PERFORM SCREEN-IO-SEND-UPDATE.
+      **************************************************************************
+      * VALIDATE-DAY - Validates day field based on month and leap year logic
+      * Checks day ranges: 31 days (Jan,Mar,May,Jul,Aug,Oct,Dec)
+      *                   30 days (Apr,Jun,Sep,Nov)
+      *                   28/29 days (Feb - depends on leap year)
+      * Uses leap year calculation: divisible by 4, except century years
+      * unless also divisible by 400
       **************************************************************************
        VALIDATE-DAY.
            EVALUATE INCI-MONTH

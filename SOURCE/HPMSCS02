@@ -352,6 +352,13 @@
            IF NOTE14L > 0 THEN MOVE NOTE14I TO INCI-NOTE-14
            END-IF.
       **************************************************************************
+      * VALIDATE-DAY - Validates day field based on month and leap year logic
+      * Checks day ranges: 31 days (Jan,Mar,May,Jul,Aug,Oct,Dec)
+      *                   30 days (Apr,Jun,Sep,Nov)
+      *                   28/29 days (Feb - depends on leap year)
+      * Uses leap year calculation: divisible by 4, except century years
+      * unless also divisible by 400
+      **************************************************************************
        VALIDATE-DAY.
            EVALUATE INCI-MONTH
                WHEN 1 OR 3 OR 5 OR 7 OR 8 OR 10 OR 12
