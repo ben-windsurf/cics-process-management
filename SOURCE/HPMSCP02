@@ -406,12 +406,17 @@
            IF DATA-RESP-CODE NOT = 0
                PERFORM GENERAL-ERROR-ROUTINE
            END-IF.
-           PERFORM DATA-SCREEN-TO-FILE.
-           PERFORM PINV-REWRITE.
-           IF DATA-RESP-CODE = 0
-               MOVE LOW-VALUES TO PINVO
-               MOVE "UPDATE COMPLETED" TO MSGO
-               PERFORM SCREEN-IO-SEND-UPDATE
-           ELSE
+           PERFORM VALIDATE-INPUT-FIELDS.
+           IF VALIDATION-ERROR-SW = 'Y'
                PERFORM GENERAL-ERROR-ROUTINE
+           ELSE
+               PERFORM DATA-SCREEN-TO-FILE
+               PERFORM PINV-REWRITE
+               IF DATA-RESP-CODE = 0
+                   MOVE LOW-VALUES TO PINVO
+                   MOVE "UPDATE COMPLETED" TO MSGO
+                   PERFORM SCREEN-IO-SEND-UPDATE
+               ELSE
+                   PERFORM GENERAL-ERROR-ROUTINE
+               END-IF
            END-IF.

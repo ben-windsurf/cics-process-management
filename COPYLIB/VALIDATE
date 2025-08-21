@@ -85,9 +85,11 @@
                    GO TO VALIDATE-DATE-EXIT
                END-IF
            ELSE
-               MOVE 'N' TO DATE-VALID-SW
-               MOVE -1 TO YEARL
-               GO TO VALIDATE-DATE-EXIT
+               IF YEARI NOT = SPACES
+                   MOVE 'N' TO DATE-VALID-SW
+                   MOVE -1 TO YEARL
+                   GO TO VALIDATE-DATE-EXIT
+               END-IF
            END-IF.
            
            IF MONTHI IS NUMERIC
@@ -98,9 +100,11 @@
                    GO TO VALIDATE-DATE-EXIT
                END-IF
            ELSE
-               MOVE 'N' TO DATE-VALID-SW
-               MOVE -1 TO MONTHL
-               GO TO VALIDATE-DATE-EXIT
+               IF MONTHI NOT = SPACES
+                   MOVE 'N' TO DATE-VALID-SW
+                   MOVE -1 TO MONTHL
+                   GO TO VALIDATE-DATE-EXIT
+               END-IF
            END-IF.
            
            IF DAYI IS NUMERIC
@@ -112,9 +116,11 @@
                    GO TO VALIDATE-DATE-EXIT
                END-IF
            ELSE
-               MOVE 'N' TO DATE-VALID-SW
-               MOVE -1 TO DAYL
-               GO TO VALIDATE-DATE-EXIT
+               IF DAYI NOT = SPACES
+                   MOVE 'N' TO DATE-VALID-SW
+                   MOVE -1 TO DAYL
+                   GO TO VALIDATE-DATE-EXIT
+               END-IF
            END-IF.
            
        VALIDATE-DATE-EXIT.
