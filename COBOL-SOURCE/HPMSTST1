@@ -1,0 +1,461 @@
+      **************************************************************************
+      * CATEGORY.: HPMS COBOL PROGRAMS
+      * GROUP....: COBOL
+      * AUTHOR...: DEVIN AI <DEVIN-AI-INTEGRATION[BOT]@USERS.NOREPLY.GITHUB.COM>
+      * DATE.....: 2025-08-21
+      * PURPOSE..: UNIT TESTS FOR DATA VALIDATION LOGIC
+      **************************************************************************
+      * MODIFICATIONS
+      * 2025-08-21 - DEVIN AI - INITIAL VERSION
+      **************************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID.  HPMSTST1.
+      **************************************************************************
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT TESTOUT ASSIGN TO TESTOUT.
+      **************************************************************************
+       DATA DIVISION.
+       FILE SECTION.
+       FD TESTOUT
+           RECORDING MODE V.
+       01  TESTOUT-RECORD              PIC X(200).
+      **************************************************************************
+       WORKING-STORAGE SECTION.
+       01  WS-CURRENT-DATE.
+           05  WS-YEAR                 PIC 9(4).
+           05  WS-MONTH                PIC 9(2).
+           05  WS-DAY                  PIC 9(2).
+           05  WS-HOURS                PIC 9(2).
+           05  WS-MINUTES              PIC 9(2).
+           05  WS-SECONDS              PIC 9(2).
+           05  WS-HUND-SECOND          PIC 9(2).
+           05  WS-GMT                  PIC X(5).
+       01  TEST-COUNTERS.
+           05  TOTAL-TESTS             PIC 9(3) VALUE 0.
+           05  PASSED-TESTS            PIC 9(3) VALUE 0.
+           05  FAILED-TESTS            PIC 9(3) VALUE 0.
+       01  TEST-VARIABLES.
+           05  TEST-EMAIL              PIC X(50).
+           05  TEST-YEAR               PIC 9(4).
+           05  TEST-MONTH              PIC 9(2).
+           05  TEST-DAY                PIC 9(2).
+           05  TEST-RESULT             PIC X(10).
+           05  TEST-EXPECTED           PIC X(10).
+           05  TEST-DESCRIPTION        PIC X(80).
+       01  LEAP-YEAR-FLAG              PIC X(1).
+       01  DATE-LINE.
+           05  FILLER                  PIC X(12)
+               VALUE 'TEST DATE:'.
+           05  FILLER                  PIC X(1)
+               VALUE SPACES.
+           05  DT-YEAR                 PIC 9(4).
+           05  FILLER                  PIC X
+               VALUE '/'.
+           05  DT-MONTH                PIC 9(2).
+           05  FILLER                  PIC X
+               VALUE '/'.
+           05  DT-DAY                  PIC 9(2).
+       01  HEADER-1.
+           05  FILLER                  PIC X(100)
+               VALUE  'HAYNIE RESEARCH & DEVELOPMENT'.
+       01  HEADER-2.
+           05  FILLER                  PIC X(100)
+               VALUE  'DATA VALIDATION UNIT TEST RESULTS'.
+       01  TEST-RESULT-LINE.
+           05  FILLER                  PIC X(6)
+               VALUE 'TEST: '.
+           05  TEST-NUM                PIC 9(3).
+           05  FILLER                  PIC X(3)
+               VALUE ' - '.
+           05  TEST-DESC               PIC X(50).
+           05  FILLER                  PIC X(3)
+               VALUE ' - '.
+           05  TEST-STATUS             PIC X(6).
+       01  SUMMARY-LINE.
+           05  FILLER                  PIC X(15)
+               VALUE 'TOTAL TESTS: '.
+           05  SUMMARY-TOTAL           PIC 9(3).
+           05  FILLER                  PIC X(10)
+               VALUE ' PASSED: '.
+           05  SUMMARY-PASSED          PIC 9(3).
+           05  FILLER                  PIC X(10)
+               VALUE ' FAILED: '.
+           05  SUMMARY-FAILED          PIC 9(3).
+      **************************************************************************
+       PROCEDURE DIVISION.
+       MAIN-PROGRAM.
+           MOVE FUNCTION CURRENT-DATE TO WS-CURRENT-DATE.
+           MOVE WS-YEAR TO DT-YEAR.
+           MOVE WS-MONTH TO DT-MONTH.
+           MOVE WS-DAY TO DT-DAY.
+           OPEN OUTPUT TESTOUT.
+           PERFORM PRINT-HEADER.
+           PERFORM EMAIL-VALIDATION-TESTS.
+           PERFORM YEAR-VALIDATION-TESTS.
+           PERFORM MONTH-VALIDATION-TESTS.
+           PERFORM DAY-VALIDATION-TESTS.
+           PERFORM LEAP-YEAR-TESTS.
+           PERFORM PRINT-SUMMARY.
+           CLOSE TESTOUT.
+           STOP RUN.
+      **************************************************************************
+       PRINT-HEADER.
+           MOVE HEADER-1 TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE HEADER-2 TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE DATE-LINE TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       EMAIL-VALIDATION-TESTS.
+           MOVE 'EMAIL VALIDATION TESTS' TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           
+           MOVE 'user@domain.com' TO TEST-EMAIL.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid email with @ and domain' TO TEST-DESCRIPTION.
+           PERFORM TEST-EMAIL-FORMAT.
+           
+           MOVE 'test.user@example.org' TO TEST-EMAIL.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid email with dots and @ symbol' TO TEST-DESCRIPTION.
+           PERFORM TEST-EMAIL-FORMAT.
+           
+           MOVE 'nodomain' TO TEST-EMAIL.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid email - no @ or domain' TO TEST-DESCRIPTION.
+           PERFORM TEST-EMAIL-FORMAT.
+           
+           MOVE 'no@symbol' TO TEST-EMAIL.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid email - no domain extension' TO TEST-DESCRIPTION.
+           PERFORM TEST-EMAIL-FORMAT.
+           
+           MOVE 'no.domain@com' TO TEST-EMAIL.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid email - missing dot in domain' TO TEST-DESCRIPTION.
+           PERFORM TEST-EMAIL-FORMAT.
+           
+           MOVE '@domain.com' TO TEST-EMAIL.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid email - missing username' TO TEST-DESCRIPTION.
+           PERFORM TEST-EMAIL-FORMAT.
+           
+           MOVE 'user@' TO TEST-EMAIL.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid email - missing domain' TO TEST-DESCRIPTION.
+           PERFORM TEST-EMAIL-FORMAT.
+           
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       TEST-EMAIL-FORMAT.
+           ADD 1 TO TOTAL-TESTS.
+           IF TEST-EMAIL CONTAINS '@' AND TEST-EMAIL CONTAINS '.'
+               MOVE 'VALID' TO TEST-RESULT
+           ELSE
+               MOVE 'INVALID' TO TEST-RESULT
+           END-IF.
+           
+           IF TEST-RESULT = TEST-EXPECTED
+               ADD 1 TO PASSED-TESTS
+               MOVE 'PASS' TO TEST-STATUS
+           ELSE
+               ADD 1 TO FAILED-TESTS
+               MOVE 'FAIL' TO TEST-STATUS
+           END-IF.
+           
+           MOVE TOTAL-TESTS TO TEST-NUM.
+           MOVE TEST-DESCRIPTION TO TEST-DESC.
+           MOVE TEST-RESULT-LINE TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       YEAR-VALIDATION-TESTS.
+           MOVE 'YEAR VALIDATION TESTS' TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           
+           MOVE 1900 TO TEST-YEAR.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid year - minimum boundary (1900)' TO TEST-DESCRIPTION.
+           PERFORM TEST-YEAR-RANGE.
+           
+           MOVE 2000 TO TEST-YEAR.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid year - middle range (2000)' TO TEST-DESCRIPTION.
+           PERFORM TEST-YEAR-RANGE.
+           
+           MOVE 2100 TO TEST-YEAR.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid year - maximum boundary (2100)' TO TEST-DESCRIPTION.
+           PERFORM TEST-YEAR-RANGE.
+           
+           MOVE 1899 TO TEST-YEAR.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid year - below minimum (1899)' TO TEST-DESCRIPTION.
+           PERFORM TEST-YEAR-RANGE.
+           
+           MOVE 2101 TO TEST-YEAR.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid year - above maximum (2101)' TO TEST-DESCRIPTION.
+           PERFORM TEST-YEAR-RANGE.
+           
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       TEST-YEAR-RANGE.
+           ADD 1 TO TOTAL-TESTS.
+           IF TEST-YEAR >= 1900 AND TEST-YEAR <= 2100
+               MOVE 'VALID' TO TEST-RESULT
+           ELSE
+               MOVE 'INVALID' TO TEST-RESULT
+           END-IF.
+           
+           IF TEST-RESULT = TEST-EXPECTED
+               ADD 1 TO PASSED-TESTS
+               MOVE 'PASS' TO TEST-STATUS
+           ELSE
+               ADD 1 TO FAILED-TESTS
+               MOVE 'FAIL' TO TEST-STATUS
+           END-IF.
+           
+           MOVE TOTAL-TESTS TO TEST-NUM.
+           MOVE TEST-DESCRIPTION TO TEST-DESC.
+           MOVE TEST-RESULT-LINE TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       MONTH-VALIDATION-TESTS.
+           MOVE 'MONTH VALIDATION TESTS' TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           
+           MOVE 1 TO TEST-MONTH.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid month - minimum boundary (1)' TO TEST-DESCRIPTION.
+           PERFORM TEST-MONTH-RANGE.
+           
+           MOVE 6 TO TEST-MONTH.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid month - middle range (6)' TO TEST-DESCRIPTION.
+           PERFORM TEST-MONTH-RANGE.
+           
+           MOVE 12 TO TEST-MONTH.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid month - maximum boundary (12)' TO TEST-DESCRIPTION.
+           PERFORM TEST-MONTH-RANGE.
+           
+           MOVE 0 TO TEST-MONTH.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid month - below minimum (0)' TO TEST-DESCRIPTION.
+           PERFORM TEST-MONTH-RANGE.
+           
+           MOVE 13 TO TEST-MONTH.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid month - above maximum (13)' TO TEST-DESCRIPTION.
+           PERFORM TEST-MONTH-RANGE.
+           
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       TEST-MONTH-RANGE.
+           ADD 1 TO TOTAL-TESTS.
+           IF TEST-MONTH >= 1 AND TEST-MONTH <= 12
+               MOVE 'VALID' TO TEST-RESULT
+           ELSE
+               MOVE 'INVALID' TO TEST-RESULT
+           END-IF.
+           
+           IF TEST-RESULT = TEST-EXPECTED
+               ADD 1 TO PASSED-TESTS
+               MOVE 'PASS' TO TEST-STATUS
+           ELSE
+               ADD 1 TO FAILED-TESTS
+               MOVE 'FAIL' TO TEST-STATUS
+           END-IF.
+           
+           MOVE TOTAL-TESTS TO TEST-NUM.
+           MOVE TEST-DESCRIPTION TO TEST-DESC.
+           MOVE TEST-RESULT-LINE TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       DAY-VALIDATION-TESTS.
+           MOVE 'DAY VALIDATION TESTS' TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           
+           MOVE 2024 TO TEST-YEAR.
+           MOVE 1 TO TEST-MONTH.
+           MOVE 31 TO TEST-DAY.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid day - January 31st' TO TEST-DESCRIPTION.
+           PERFORM TEST-DAY-VALIDATION.
+           
+           MOVE 2024 TO TEST-YEAR.
+           MOVE 1 TO TEST-MONTH.
+           MOVE 32 TO TEST-DAY.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid day - January 32nd' TO TEST-DESCRIPTION.
+           PERFORM TEST-DAY-VALIDATION.
+           
+           MOVE 2024 TO TEST-YEAR.
+           MOVE 4 TO TEST-MONTH.
+           MOVE 30 TO TEST-DAY.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid day - April 30th' TO TEST-DESCRIPTION.
+           PERFORM TEST-DAY-VALIDATION.
+           
+           MOVE 2024 TO TEST-YEAR.
+           MOVE 4 TO TEST-MONTH.
+           MOVE 31 TO TEST-DAY.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid day - April 31st' TO TEST-DESCRIPTION.
+           PERFORM TEST-DAY-VALIDATION.
+           
+           MOVE 2024 TO TEST-YEAR.
+           MOVE 2 TO TEST-MONTH.
+           MOVE 29 TO TEST-DAY.
+           MOVE 'VALID' TO TEST-EXPECTED.
+           MOVE 'Valid day - Feb 29th leap year' TO TEST-DESCRIPTION.
+           PERFORM TEST-DAY-VALIDATION.
+           
+           MOVE 2023 TO TEST-YEAR.
+           MOVE 2 TO TEST-MONTH.
+           MOVE 29 TO TEST-DAY.
+           MOVE 'INVALID' TO TEST-EXPECTED.
+           MOVE 'Invalid day - Feb 29th non-leap year' TO TEST-DESCRIPTION.
+           PERFORM TEST-DAY-VALIDATION.
+           
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       TEST-DAY-VALIDATION.
+           ADD 1 TO TOTAL-TESTS.
+           PERFORM CHECK-LEAP-YEAR.
+           EVALUATE TEST-MONTH
+               WHEN 1 OR 3 OR 5 OR 7 OR 8 OR 10 OR 12
+                   IF TEST-DAY >= 1 AND TEST-DAY <= 31
+                       MOVE 'VALID' TO TEST-RESULT
+                   ELSE
+                       MOVE 'INVALID' TO TEST-RESULT
+                   END-IF
+               WHEN 4 OR 6 OR 9 OR 11
+                   IF TEST-DAY >= 1 AND TEST-DAY <= 30
+                       MOVE 'VALID' TO TEST-RESULT
+                   ELSE
+                       MOVE 'INVALID' TO TEST-RESULT
+                   END-IF
+               WHEN 2
+                   IF LEAP-YEAR-FLAG = 'Y'
+                       IF TEST-DAY >= 1 AND TEST-DAY <= 29
+                           MOVE 'VALID' TO TEST-RESULT
+                       ELSE
+                           MOVE 'INVALID' TO TEST-RESULT
+                       END-IF
+                   ELSE
+                       IF TEST-DAY >= 1 AND TEST-DAY <= 28
+                           MOVE 'VALID' TO TEST-RESULT
+                       ELSE
+                           MOVE 'INVALID' TO TEST-RESULT
+                       END-IF
+                   END-IF
+               WHEN OTHER
+                   MOVE 'INVALID' TO TEST-RESULT
+           END-EVALUATE.
+           
+           IF TEST-RESULT = TEST-EXPECTED
+               ADD 1 TO PASSED-TESTS
+               MOVE 'PASS' TO TEST-STATUS
+           ELSE
+               ADD 1 TO FAILED-TESTS
+               MOVE 'FAIL' TO TEST-STATUS
+           END-IF.
+           
+           MOVE TOTAL-TESTS TO TEST-NUM.
+           MOVE TEST-DESCRIPTION TO TEST-DESC.
+           MOVE TEST-RESULT-LINE TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       LEAP-YEAR-TESTS.
+           MOVE 'LEAP YEAR CALCULATION TESTS' TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           
+           MOVE 2000 TO TEST-YEAR.
+           MOVE 'LEAP' TO TEST-EXPECTED.
+           MOVE 'Leap year - divisible by 400 (2000)' TO TEST-DESCRIPTION.
+           PERFORM TEST-LEAP-YEAR-CALC.
+           
+           MOVE 1900 TO TEST-YEAR.
+           MOVE 'NOT LEAP' TO TEST-EXPECTED.
+           MOVE 'Not leap year - div by 100 not 400 (1900)' TO TEST-DESCRIPTION.
+           PERFORM TEST-LEAP-YEAR-CALC.
+           
+           MOVE 2004 TO TEST-YEAR.
+           MOVE 'LEAP' TO TEST-EXPECTED.
+           MOVE 'Leap year - divisible by 4 (2004)' TO TEST-DESCRIPTION.
+           PERFORM TEST-LEAP-YEAR-CALC.
+           
+           MOVE 2001 TO TEST-YEAR.
+           MOVE 'NOT LEAP' TO TEST-EXPECTED.
+           MOVE 'Not leap year - not divisible by 4 (2001)' TO TEST-DESCRIPTION.
+           PERFORM TEST-LEAP-YEAR-CALC.
+           
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       TEST-LEAP-YEAR-CALC.
+           ADD 1 TO TOTAL-TESTS.
+           PERFORM CHECK-LEAP-YEAR.
+           IF LEAP-YEAR-FLAG = 'Y'
+               MOVE 'LEAP' TO TEST-RESULT
+           ELSE
+               MOVE 'NOT LEAP' TO TEST-RESULT
+           END-IF.
+           
+           IF TEST-RESULT = TEST-EXPECTED
+               ADD 1 TO PASSED-TESTS
+               MOVE 'PASS' TO TEST-STATUS
+           ELSE
+               ADD 1 TO FAILED-TESTS
+               MOVE 'FAIL' TO TEST-STATUS
+           END-IF.
+           
+           MOVE TOTAL-TESTS TO TEST-NUM.
+           MOVE TEST-DESCRIPTION TO TEST-DESC.
+           MOVE TEST-RESULT-LINE TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+      **************************************************************************
+       CHECK-LEAP-YEAR.
+           IF FUNCTION MOD(TEST-YEAR, 400) = 0
+               MOVE 'Y' TO LEAP-YEAR-FLAG
+           ELSE IF FUNCTION MOD(TEST-YEAR, 100) = 0
+               MOVE 'N' TO LEAP-YEAR-FLAG
+           ELSE IF FUNCTION MOD(TEST-YEAR, 4) = 0
+               MOVE 'Y' TO LEAP-YEAR-FLAG
+           ELSE
+               MOVE 'N' TO LEAP-YEAR-FLAG
+           END-IF.
+      **************************************************************************
+       PRINT-SUMMARY.
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE 'TEST SUMMARY' TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           MOVE SPACES TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
+           
+           MOVE TOTAL-TESTS TO SUMMARY-TOTAL.
+           MOVE PASSED-TESTS TO SUMMARY-PASSED.
+           MOVE FAILED-TESTS TO SUMMARY-FAILED.
+           MOVE SUMMARY-LINE TO TESTOUT-RECORD.
+           WRITE TESTOUT-RECORD.
